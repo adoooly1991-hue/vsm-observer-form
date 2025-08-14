@@ -98,32 +98,35 @@ if st.button("Generate observations"):
         st.dataframe(obs)
         st.session_state['vsm_obs'] = obs
 
-        st.subheader('Narrative (copy/paste)')
-        for _, r in obs.iterrows():
-            st.markdown(f"**{r['step_name']} — {r['waste'].title()}**
+        # --- Narrative by Theme (PQCDSM) ---
+        from engine import categorize_theme
+        obs["theme_code"] = obs["waste"].apply(lambda w: categorize_theme(w)[0])
+        obs["theme_name"] = obs["waste"].apply(lambda w: categorize_theme(w)[1])
+        st.subheader("Narrative by Theme (PQCDSM)")
+        theme_order = [("P","Production"),("Q","Quality"),("C","Cost"),("D","Delivery"),("S","Safety"),("M","Morale")]
+        for code, name in theme_order:
+            group = obs[obs["theme_code"]==code]
+            if group.empty:
+                continue
+            st.markdown(f"### {code} — {name}")
+            for idx, r in enumerate(group.itertuples(index=False), start=1):
+                num = f"{code}-{idx}"
+                st.markdown(f"**{num}: {r.step_name} — {r.waste.title()}**  \n{getattr(r,'observation','')}")
 
-{r['observation']}")
-
-        # Download observations as Markdown text
-        import io
-        md_buf = io.StringIO()
-        for _, r in obs.iterrows():
-            md_buf.write(f"## {r['step_name']} — {r['waste'].title()}
-
-{r['observation']}
-
-")
-        st.download_button('Download observations (Markdown)', data=md_buf.getvalue(), file_name='observations.md', mime='text/markdown')
-        st.session_state["vsm_obs"] = obs
-
-
-        # Compute effective CT per step for spacing (same logic as lead-time calc)
-        ct_eff_map = {sid: result["by_step"].get(sid,{}).get("ct_eff_sec", 0.0) for sid in result["by_step"].keys()}
-
-        # Export buttons
-        from report import export_observations_pptx, export_observations_pdf
-        
-
+        # Download observations as Markdown text (grouped by PQCDSM)
+        md_lines = []
+        for code, name in theme_order:
+            group = obs[obs["theme_code"]==code]
+            if group.empty:
+                continue
+            md_lines.append(f"# {code} — {name}")
+            for idx, r in enumerate(group.itertuples(index=False), start=1):
+                num = f"{code}-{idx}"
+                md_lines.append(f"## {num}: {r.step_name} — {r.waste.title()}")
+                md_lines.append(getattr(r, "observation", ""))
+                md_lines.append("")
+        md_text = "\n\n".join(md_lines)
+        st.download_button("Download Observations (Markdown, PQCDSM)", data=md_text, file_name="observations_pqcdsm.md", mime="text/markdown")
 if st.button("Export PPTX"):
     # Retrieve latest computed artifacts; recompute if needed
     steps_ss = st.session_state.get("vsm_steps", steps)
