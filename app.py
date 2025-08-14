@@ -49,7 +49,7 @@ for i in range(int(n_steps)):
         qbank = templates.get("questionnaire", {})
         answers = {}
         for waste, cfg in qbank.items():
-            with st.expander(f"• {waste.title()}"):
+        # switched to tabs above; loop retained for compatibility
                 for q in cfg.get("questions", []):
                     opts = ["(skip)"] + [o["label"] for o in q.get("options", [])]
                     choice = st.selectbox(
