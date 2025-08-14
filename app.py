@@ -44,6 +44,23 @@ for i in range(int(n_steps)):
 
         waiting_starved = st.number_input(f"{id_val} Waiting/starved time (% of available)", min_value=0.0, value=5.0, step=0.5)
 
+        # Questionnaire (smart) — Multiple-choice answers affect severity & narrative
+        st.markdown("**Questionnaire (smart):** Answer only what you know; it will refine severity and narrative.")
+        qbank = templates.get("questionnaire", {})
+        answers = {}
+        for waste, cfg in qbank.items():
+            with st.expander(f"• {waste.title()}"):
+                for q in cfg.get("questions", []):
+                    opts = ["(skip)"] + [o["label"] for o in q.get("options", [])]
+                    choice = st.selectbox(
+                        f"{q.get('text')}", opts, index=0, key=f"{id_val}-{waste}-{q.get('id')}"
+                    )
+                    if choice != "(skip)":
+                        answers.setdefault(waste, {})[q.get("id")] = choice
+        # attach answers to step
+        step.answers = answers
+    
+
         step = ProcessStep(
             id=id_val,
             name=name,
@@ -84,7 +101,7 @@ if st.button("Generate observations"):
     obs_rows = []
     id_to_name = {s.id: s.name for s in steps}
     for idx, s in enumerate(steps):
-        w = score_wastes(s, templates["thresholds"])
+        w = score_wastes(s, templates["thresholds"], templates=templates)
         ctx = {"prev_name": id_to_name.get(steps[idx-1].id) if idx>0 else None,
                "waiting_sec": result["by_step"].get(s.id,{}).get("waiting_sec",0.0)}
         for waste in ["defects","waiting","inventory","overproduction","transportation","motion","overprocessing","talent"]:
@@ -157,7 +174,7 @@ if st.button("Export PPTX"):
     # Build per-step top-2 wastes
     perstep_top2 = {}
     for s in steps_ss:
-        w2 = score_wastes(s, templates_ss["thresholds"])
+        w2 = score_wastes(s, templates_ss["thresholds"], templates=templates_ss)
         ranked = sorted(list(w2["scores"].items()), key=lambda kv: kv[1], reverse=True)
         top2 = [(name, score) for name, score in ranked if score > 0][:2]
         perstep_top2[s.id] = top2

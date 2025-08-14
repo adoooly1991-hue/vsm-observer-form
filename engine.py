@@ -61,8 +61,9 @@ def compute_lead_time(steps: List[ProcessStep], available_time_sec: float) -> di
         total += tot
     return {"lead_time_sec": round(total,2), "ct_bottleneck_sec": round(ct_bottleneck,2), "by_step": per_step}
 
-def score_wastes(step: ProcessStep, thresholds: dict) -> Dict[str, Any]:
+def score_wastes(step: ProcessStep, thresholds: dict, templates: dict=None) -> Dict[str, Any]:
     scores, conf = {}, {}
+    templates = templates or {}
     # Defects
     if step.defect_pct is not None:
         scores["defects"] = min(5.0, round((step.defect_pct / max(1e-6, thresholds["defect_pct_high"])) * 5.0, 2)); conf["defects"]="High"
@@ -91,6 +92,14 @@ def score_wastes(step: ProcessStep, thresholds: dict) -> Dict[str, Any]:
     # Talent
     scores["talent"] = 3.0 if step.answers.get("underutilized_talent") else 0.0
     conf["talent"] = "Low" if scores["talent"]>0 else "Low"
+
+    # Apply questionnaire adjustments per waste
+    for waste in list(scores.keys()):
+        dlt, _ = get_questionnaire_effects(step, templates if templates else {"questionnaire":{}}, waste)
+        scores[waste] = max(0.0, min(5.0, scores[waste] + dlt))
+        # If score is from questionnaire only and was previously zero, bump confidence from Low to Medium
+        if dlt != 0 and conf.get(waste,"Low") == "Low":
+            conf[waste] = "Medium"
     return {"scores": scores, "confidence": conf}
 
 def rpn_like(severity_0_5: float, recurrence_hint: float, detection_hint: float) -> float:
@@ -119,7 +128,10 @@ def make_observation(step: ProcessStep, waste: str, w: Dict[str,Any], tpl: dict,
         walk_m_per_unit=step.walk_m_per_unit or 0
     )
     wrapper_key = "high_conf" if conf=="High" else ("med_conf" if conf=="Medium" else "low_conf")
-    text = tpl["observation_wrappers"][wrapper_key].format(text=text_raw)
+    # Append questionnaire-derived snippets
+    dlt, frags = get_questionnaire_effects(step, tpl, waste)
+    extras = (" Noted factors: " + "; ".join(frags)) if frags else ""
+    text = tpl["observation_wrappers"][wrapper_key].format(text=text_raw) + extras + ("" if not frags else "")
 
     recurrence = 7 if (step.downtime_pct or 0) > (thresholds.get("downtime_pct_high",10)) else 4
     detection = 3 if conf=="High" else (6 if conf=="Medium" else 8)
@@ -154,3 +166,27 @@ def categorize_theme(waste: str) -> tuple:
     if w in ("talent",):
         return ("M", "Morale")
     return ("P", "Production")
+
+
+def get_questionnaire_effects(step: ProcessStep, templates: dict, waste: str):
+    """
+    Sum delta scores from questionnaire answers for a given waste.
+    Return (delta, snippets)
+    """
+    delta = 0.0
+    snippets = []
+    qbank = templates.get("questionnaire", {}).get(waste, {}).get("questions", [])
+    answers = step.answers.get(waste, {}) if step.answers else {}
+    # answers structure: {question_id: option_label}
+    for q in qbank:
+        qid = q.get("id")
+        chosen = answers.get(qid)
+        if not chosen: 
+            continue
+        for opt in q.get("options", []):
+            if opt.get("label") == chosen:
+                delta += float(opt.get("delta_score", 0.0))
+                snip = opt.get("snippet")
+                if snip: snippets.append(snip)
+                break
+    return delta, snippets

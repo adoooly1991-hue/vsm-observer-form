@@ -74,3 +74,238 @@ ranking_weights:
   severity: 0.6
   recurrence: 0.25
   detection: 0.15
+questionnaire:
+  defects:
+    questions:
+    - id: trend
+      text: Defect trend (last 4 weeks)
+      options:
+      - label: Rising
+        delta_score: 1.0
+        snippet: Defects trend upward in the last month.
+      - label: Stable
+        delta_score: 0.0
+        snippet: Defects trend is stable.
+      - label: Falling
+        delta_score: -0.5
+        snippet: Defects trend shows recent improvement.
+    - id: rca
+      text: Root cause known & controlled?
+      options:
+      - label: Unknown
+        delta_score: 0.5
+        snippet: Root causes are not yet well-defined.
+      - label: Partially known
+        delta_score: 0.2
+        snippet: Some causes identified; controls in progress.
+      - label: Known & controlled
+        delta_score: -0.5
+        snippet: Containment and control plan active.
+  waiting:
+    questions:
+    - id: frequency
+      text: Starved/blocked frequency
+      options:
+      - label: Frequent
+        delta_score: 1.0
+        snippet: Frequent starved/blocked intervals reported.
+      - label: Occasional
+        delta_score: 0.5
+        snippet: Intermittent waiting occurs.
+      - label: Rare
+        delta_score: 0.0
+        snippet: Waiting is infrequent.
+    - id: release
+      text: Release method
+      options:
+      - label: Batch pushes
+        delta_score: 0.5
+        snippet: Batch release increases queue variability.
+      - label: Small batches
+        delta_score: 0.2
+        snippet: Small batches reduce variability somewhat.
+      - label: Single-piece flow
+        delta_score: -0.5
+        snippet: Single-piece flow stabilizes queues.
+  inventory:
+    questions:
+    - id: age
+      text: Average WIP storage time
+      options:
+      - label: '> 1 day'
+        delta_score: 1.0
+        snippet: WIP ages more than a day.
+      - label: Hours
+        delta_score: 0.5
+        snippet: WIP stored for hours.
+      - label: Just-in-time
+        delta_score: 0.0
+        snippet: WIP turns quickly (JIT).
+    - id: space
+      text: Space constraints
+      options:
+      - label: Aisles congested
+        delta_score: 0.5
+        snippet: Congested aisles indicate excessive buffers.
+      - label: Manageable
+        delta_score: 0.2
+        snippet: Space is tight but manageable.
+      - label: Adequate
+        delta_score: 0.0
+        snippet: Space is adequate.
+  overproduction:
+    questions:
+    - id: demand
+      text: Plan vs. actual demand
+      options:
+      - label: '> 20% over-plan'
+        delta_score: 1.0
+        snippet: Production output exceeds demand by >20%.
+      - label: "5\u201320% over-plan"
+        delta_score: 0.5
+        snippet: "Production output exceeds demand by 5\u201320%."
+      - label: "Within \xB15%"
+        delta_score: 0.0
+        snippet: Output is aligned to demand.
+    - id: eos
+      text: End-of-shift make-to-stock?
+      options:
+      - label: 'Yes'
+        delta_score: 0.5
+        snippet: End-of-shift make-to-stock occurs.
+      - label: Sometimes
+        delta_score: 0.2
+        snippet: Occasional make-to-stock observed.
+      - label: 'No'
+        delta_score: 0.0
+        snippet: No make-to-stock practice.
+  transportation:
+    questions:
+    - id: moves
+      text: Material moves per unit
+      options:
+      - label: 3 or more
+        delta_score: 1.0
+        snippet: Multiple handling touches per unit.
+      - label: '2'
+        delta_score: 0.5
+        snippet: Two handling steps per unit.
+      - label: '1'
+        delta_score: 0.0
+        snippet: Single handling step per unit.
+    - id: method
+      text: Handling method
+      options:
+      - label: Forklift across bay
+        delta_score: 0.5
+        snippet: Long-haul moves add non-VA time.
+      - label: Cart nearby
+        delta_score: 0.2
+        snippet: Short moves managed by carts.
+      - label: Point-of-use
+        delta_score: 0.0
+        snippet: Materials at point-of-use.
+  motion:
+    questions:
+    - id: ergonomics
+      text: Reach/Bend frequency
+      options:
+      - label: Frequent
+        delta_score: 1.0
+        snippet: Frequent reach/bend indicates ergonomic issues.
+      - label: Moderate
+        delta_score: 0.5
+        snippet: Moderate reach/bend observed.
+      - label: Rare
+        delta_score: 0.0
+        snippet: Motion within ergonomic targets.
+    - id: pou
+      text: Tools & parts at point-of-use
+      options:
+      - label: 'No'
+        delta_score: 0.5
+        snippet: Missing point-of-use materials increase motion.
+      - label: Partial
+        delta_score: 0.2
+        snippet: Some items not at point-of-use.
+      - label: 'Yes'
+        delta_score: 0.0
+        snippet: Point-of-use layout maintained.
+  overprocessing:
+    questions:
+    - id: duplicate_checks
+      text: Duplicate inspections/checks
+      options:
+      - label: 'Yes'
+        delta_score: 1.0
+        snippet: Duplicate inspections found.
+      - label: Sometimes
+        delta_score: 0.5
+        snippet: Occasional duplicate checks.
+      - label: 'No'
+        delta_score: 0.0
+        snippet: No duplicate inspections.
+    - id: data_entry
+      text: Manual data entry duplication
+      options:
+      - label: 'Yes'
+        delta_score: 0.5
+        snippet: Repeated manual data entry detected.
+      - label: Sometimes
+        delta_score: 0.2
+        snippet: Some duplicated entries remain.
+      - label: 'No'
+        delta_score: 0.0
+        snippet: No duplicated data entry.
+  talent:
+    questions:
+    - id: kaizen
+      text: Operator suggestions used
+      options:
+      - label: Rarely used
+        delta_score: 0.5
+        snippet: Improvement suggestions are rarely institutionalized.
+      - label: Sometimes used
+        delta_score: 0.2
+        snippet: Some suggestions adopted.
+      - label: Often used
+        delta_score: 0.0
+        snippet: Suggestions frequently implemented.
+    - id: xt
+      text: Cross-training coverage
+      options:
+      - label: None
+        delta_score: 0.5
+        snippet: Cross-training is limited; flexibility is low.
+      - label: Partial
+        delta_score: 0.2
+        snippet: Partial cross-training in place.
+      - label: Full
+        delta_score: 0.0
+        snippet: Full cross-training coverage.
+  safety:
+    questions:
+    - id: near_miss
+      text: Near-miss frequency
+      options:
+      - label: Weekly
+        delta_score: 1.0
+        snippet: Near-misses occur weekly.
+      - label: Monthly
+        delta_score: 0.5
+        snippet: Near-misses occur monthly.
+      - label: Rare
+        delta_score: 0.0
+        snippet: Near-misses are rare.
+    - id: ppe
+      text: PPE compliance
+      options:
+      - label: Inconsistent
+        delta_score: 0.5
+        snippet: PPE adherence is inconsistent.
+      - label: Mostly consistent
+        delta_score: 0.2
+        snippet: Some PPE compliance gaps remain.
+      - label: Consistent
+        delta_score: 0.0
+        snippet: PPE compliance is consistent.
