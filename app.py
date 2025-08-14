@@ -57,8 +57,6 @@ for i in range(int(n_steps)):
                     )
                     if choice != "(skip)":
                         answers.setdefault(waste, {})[q.get("id")] = choice
-        # attach answers to step
-        step.answers = answers
     
 
         step = ProcessStep(
@@ -80,6 +78,8 @@ for i in range(int(n_steps)):
             distance_m=distance_m,
             layout_moves=layout_moves,
             walk_m_per_unit=walk_m,
+            
+            answers=answers,
             waiting_starved_pct=waiting_starved
         )
         steps.append(step)
